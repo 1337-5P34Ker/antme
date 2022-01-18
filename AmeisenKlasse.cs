@@ -64,6 +64,8 @@ namespace AntMe.Player.Ameisen
         /// </summary>
         public override void Wartet()
         {
+            DreheUmWinkel(Zufall.Zahl(-30, 30));
+            GeheGeradeaus(100);
         }
 
         /// <summary>
@@ -117,6 +119,10 @@ namespace AntMe.Player.Ameisen
         /// <param name="zucker">Der gesichtete Zuckerhügel</param>
         public override void Sieht(Zucker zucker)
         {
+            if (Ziel == null)
+            {
+                GeheZuZiel(zucker);
+            }
         }
 
         /// <summary>
@@ -139,6 +145,8 @@ namespace AntMe.Player.Ameisen
         /// <param name="zucker">Der erreichte Zuckerhügel</param>
         public override void ZielErreicht(Zucker zucker)
         {
+            Nimm(zucker);
+            GeheZuBau();
         }
 
         #endregion
