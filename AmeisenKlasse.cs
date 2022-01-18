@@ -76,7 +76,7 @@ namespace AntMe.Player.Ameisen
             {
                 if (_zucker.Menge > 0)
                 {
-                    GeheZuZiel(_zucker);
+                    GeheDirektZu(_zucker);
                 }
                 else
                 {
@@ -258,6 +258,19 @@ namespace AntMe.Player.Ameisen
         /// <param name="wanze">Angreifende Wanze</param>
         public override void WirdAngegriffen(Wanze wanze)
         {
+        }
+
+        #endregion
+
+        #region Eigene Implementierungen
+
+        private void GeheDirektZu(Spielobjekt objekt)
+        {
+            int entfernung = Koordinate.BestimmeEntfernung(this, objekt);
+            int richtung = Koordinate.BestimmeRichtung(this, objekt);
+
+            DreheInRichtung(richtung);
+            GeheGeradeaus(entfernung);
         }
 
         #endregion
