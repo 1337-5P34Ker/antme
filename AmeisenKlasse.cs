@@ -42,6 +42,10 @@ namespace AntMe.Player.Ameisen
 
         private Zucker _zucker = null;
 
+        private Bau _bau = null;
+
+        private Spielobjekt _direktesZiel = null;
+
         #endregion
 
 
@@ -72,11 +76,14 @@ namespace AntMe.Player.Ameisen
         /// </summary>
         public override void Wartet()
         {
+
+            SetzeBau();
+
             if (_zucker != null)
             {
                 if (_zucker.Menge > 0)
                 {
-                    GeheDirektZu(_zucker);
+                    GeheDirektZuZiel(_zucker);
                 }
                 else
                 {
@@ -118,6 +125,25 @@ namespace AntMe.Player.Ameisen
         /// </summary>
         public override void Tick()
         {
+            if (_direktesZiel != null)
+            {
+                int entfernung = Koordinate.BestimmeEntfernung(this, _direktesZiel);
+                if (entfernung < Sichtweite / 10)
+                {
+                    GeheZuZiel(_direktesZiel);
+                    _direktesZiel = null;
+                }
+
+                if (_zucker != null && _direktesZiel == _zucker)
+                {
+                    var entfernungZumZucker = Koordinate.BestimmeEntfernung(this, _zucker);
+                    if (entfernungZumZucker < Sichtweite)
+                    {
+                        SprüheMarkierung(_zucker.Menge, 500);
+                    }
+                }
+            }
+
         }
 
         #endregion
@@ -142,7 +168,7 @@ namespace AntMe.Player.Ameisen
         /// <param name="zucker">Der gesichtete Zuckerhügel</param>
         public override void Sieht(Zucker zucker)
         {
-            if (Ziel == null)
+            if (Ziel == null && _direktesZiel == null)
             {
                 GeheZuZiel(zucker);
             }
@@ -168,12 +194,13 @@ namespace AntMe.Player.Ameisen
         /// <param name="zucker">Der erreichte Zuckerhügel</param>
         public override void ZielErreicht(Zucker zucker)
         {
-            if(_zucker == null)
+            SprüheMarkierung(zucker.Menge, 500); // Menge des restlichenZucker, 200 ist der Radius
+            if (_zucker == null)
             {
                 _zucker = zucker;
             }
             Nimm(zucker);
-            GeheZuBau();
+            GeheDirektZuBau();
         }
 
         #endregion
@@ -189,6 +216,11 @@ namespace AntMe.Player.Ameisen
         /// <param name="markierung">Die gerochene Markierung</param>
         public override void RiechtFreund(Markierung markierung)
         {
+            if (Ziel == null && _direktesZiel == null)
+            {
+                Denke("Gehe zum gefundenen Zucker");
+                GeheDirektZuZiel(markierung);
+            }
         }
 
         /// <summary>
@@ -264,10 +296,33 @@ namespace AntMe.Player.Ameisen
 
         #region Eigene Implementierungen
 
-        private void GeheDirektZu(Spielobjekt objekt)
+        private void GeheDirektZuZiel(Spielobjekt objekt)
         {
             int entfernung = Koordinate.BestimmeEntfernung(this, objekt);
             int richtung = Koordinate.BestimmeRichtung(this, objekt);
+
+            _direktesZiel = objekt;
+
+            DreheInRichtung(richtung);
+            GeheGeradeaus(entfernung);
+        }
+
+        private void SetzeBau()
+        {
+            if (_bau == null)
+            {
+                GeheZuBau();
+                _bau = Ziel as Bau;
+            }
+        }
+
+        private void GeheDirektZuBau()
+        {
+            SetzeBau();
+            int entfernung = Koordinate.BestimmeEntfernung(this, _bau);
+            int richtung = Koordinate.BestimmeRichtung(this, _bau);
+
+            _direktesZiel = _bau;
 
             DreheInRichtung(richtung);
             GeheGeradeaus(entfernung);
