@@ -37,6 +37,14 @@ namespace AntMe.Player.Ameisen
     )]
     public class AmeisenKlasse : Basisameise
     {
+
+        #region Eigenschaften 
+
+        private Zucker _zucker = null;
+
+        #endregion
+
+
         #region Kasten
 
         /// <summary>
@@ -64,8 +72,23 @@ namespace AntMe.Player.Ameisen
         /// </summary>
         public override void Wartet()
         {
-            DreheUmWinkel(Zufall.Zahl(-30, 30));
-            GeheGeradeaus(100);
+            if (_zucker != null)
+            {
+                if (_zucker.Menge > 0)
+                {
+                    GeheZuZiel(_zucker);
+                }
+                else
+                {
+                    _zucker = null;
+                }
+            }
+            else
+            {
+                DreheUmWinkel(Zufall.Zahl(-30, 30));
+                GeheGeradeaus(100);
+            }
+
         }
 
         /// <summary>
@@ -145,6 +168,10 @@ namespace AntMe.Player.Ameisen
         /// <param name="zucker">Der erreichte Zuckerhügel</param>
         public override void ZielErreicht(Zucker zucker)
         {
+            if(_zucker == null)
+            {
+                _zucker = zucker;
+            }
             Nimm(zucker);
             GeheZuBau();
         }
