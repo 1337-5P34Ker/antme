@@ -46,6 +46,10 @@ namespace AntMe.Player.Ameisen
 
         private Spielobjekt _direktesZiel = null;
 
+        private int _zuckerX = 0;
+
+        private int _zuckerY = 0;
+
         #endregion
 
 
@@ -134,13 +138,19 @@ namespace AntMe.Player.Ameisen
                     _direktesZiel = null;
                 }
 
-                if (_zucker != null && _direktesZiel == _zucker)
+                if (_zucker != null && _zucker.Menge > 0 && _direktesZiel == _zucker)
                 {
                     var entfernungZumZucker = Koordinate.BestimmeEntfernung(this, _zucker);
                     if (entfernungZumZucker < Sichtweite)
                     {
                         SprüheMarkierung(_zucker.Menge, 500);
                     }
+                }
+                if(_zucker != null && _direktesZiel == _zucker && _zucker.Menge < 5)
+                {
+                    _direktesZiel = null;
+                    DreheUmWinkel(Zufall.Zahl(-30, 30));
+                    GeheGeradeaus(100);
                 }
             }
 
@@ -198,6 +208,7 @@ namespace AntMe.Player.Ameisen
             if (_zucker == null)
             {
                 _zucker = zucker;
+                BerechneKoordinaten(zucker);
             }
             Nimm(zucker);
             GeheDirektZuBau();
@@ -313,12 +324,14 @@ namespace AntMe.Player.Ameisen
             {
                 GeheZuBau();
                 _bau = Ziel as Bau;
+                BleibStehen();
             }
         }
 
         private void GeheDirektZuBau()
         {
             SetzeBau();
+
             int entfernung = Koordinate.BestimmeEntfernung(this, _bau);
             int richtung = Koordinate.BestimmeRichtung(this, _bau);
 
@@ -326,6 +339,33 @@ namespace AntMe.Player.Ameisen
 
             DreheInRichtung(richtung);
             GeheGeradeaus(entfernung);
+        }
+
+        private void BerechneKoordinaten(Spielobjekt objekt)
+        {
+           
+            // Winkel öfnet sich nach links unten
+            var entfernung = Koordinate.BestimmeEntfernung(objekt, _bau);
+            var richtung = Koordinate.BestimmeRichtung(_bau, objekt);
+
+            var radiant = KonvertiereWinkelInRadiant(richtung);
+            _zuckerX = -(int)(Math.Cos(radiant) * entfernung);
+            _zuckerY = (int)(Math.Sin(radiant) * entfernung);
+        }
+
+        public static double KonvertiereRadiantInWinkel(double radiant)
+        {
+            // https://de.wikipedia.org/wiki/Radiant_(Einheit) -> 2π * radiant = 360° -> π * radiant = 180° -> x = (180°/π) * radiant
+
+            double winkel = (180 / Math.PI) * radiant;
+            return winkel;
+        }
+
+        public static double KonvertiereWinkelInRadiant(double winkel)
+        {
+            // https://de.wikipedia.org/wiki/Radiant_(Einheit)
+            float radiant = (float)winkel / 360 * (float)Math.PI * 2;
+            return (radiant);
         }
 
         #endregion
