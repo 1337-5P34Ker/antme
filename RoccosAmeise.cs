@@ -17,9 +17,9 @@ namespace AntMe.Player.Ameisen
     /// (http://wiki.antme.net/de/Lektionen)
     /// </summary>
     [Spieler(
-        Volkname = "Ameisen",   // Hier kannst du den Namen des Volkes festlegen
-        Vorname = "Rocco",       // An dieser Stelle kannst du dich als Schöpfer der Ameise eintragen
-        Nachname = "Hundertmark"       // An dieser Stelle kannst du dich als Schöpfer der Ameise eintragen
+        Volkname = "Borg",   // Hier kannst du den Namen des Volkes festlegen
+        Vorname = "Widerstand",       // An dieser Stelle kannst du dich als Schöpfer der Ameise eintragen
+        Nachname = " ist zwecklos"       // An dieser Stelle kannst du dich als Schöpfer der Ameise eintragen
     )]
 
     /// Kasten stellen "Berufsgruppen" innerhalb deines Ameisenvolkes dar. Du kannst hier mit
@@ -35,7 +35,7 @@ namespace AntMe.Player.Ameisen
         ReichweiteModifikator = 0,          // Ausdauer einer Ameise
         SichtweiteModifikator = 0           // Sichtweite einer Ameise
     )]
-    public class AmeisenKlasse : Basisameise
+    public class RoccosAmeise : Basisameise
     {
 
         #region Eigenschaften 
@@ -49,6 +49,8 @@ namespace AntMe.Player.Ameisen
         private int _zuckerX = 0;
 
         private int _zuckerY = 0;
+
+        private bool _istRegistriert = false;
 
         #endregion
 
@@ -80,6 +82,12 @@ namespace AntMe.Player.Ameisen
         /// </summary>
         public override void Wartet()
         {
+            if (!_istRegistriert)
+            {
+                Denke("Registriere mich mal");
+                TicketManager.Instance.RegistriereAmeise(this);
+                _istRegistriert = true;
+            }
 
             SetzeBau();
 
@@ -96,10 +104,20 @@ namespace AntMe.Player.Ameisen
             }
             else
             {
-                DreheUmWinkel(Zufall.Zahl(-30, 30));
-                GeheGeradeaus(100);
+                var ticket = TicketManager.Instance.GetTicket();
+                if (ticket != null)
+                {
+                    Denke("Ich habe ein Ticket und gehe zum Zucker");
+                    _zucker = ticket._zucker;
+                    GeheDirektZuZiel(_zucker);
+                }
+                else
+                {
+                    Denke("Keine Tickets mehr da...");
+                    DreheUmWinkel(Zufall.Zahl(-30, 30));
+                    GeheGeradeaus(100);
+                }
             }
-
         }
 
         /// <summary>
@@ -119,6 +137,7 @@ namespace AntMe.Player.Ameisen
         /// <param name="todesart">Art des Todes</param>
         public override void IstGestorben(Todesart todesart)
         {
+            TicketManager.Instance.UnRegistriereAmeise(this);
         }
 
         /// <summary>
@@ -138,15 +157,15 @@ namespace AntMe.Player.Ameisen
                     _direktesZiel = null;
                 }
 
-                if (_zucker != null && _zucker.Menge > 0 && _direktesZiel == _zucker)
-                {
-                    var entfernungZumZucker = Koordinate.BestimmeEntfernung(this, _zucker);
-                    if (entfernungZumZucker < Sichtweite)
-                    {
-                        SprüheMarkierung(_zucker.Menge, 500);
-                    }
-                }
-                if(_zucker != null && _direktesZiel == _zucker && _zucker.Menge < 5)
+                //if (_zucker != null && _zucker.Menge > 0 && _direktesZiel == _zucker)
+                //{
+                //    var entfernungZumZucker = Koordinate.BestimmeEntfernung(this, _zucker);
+                //    if (entfernungZumZucker < Sichtweite)
+                //    {
+                //        SprüheMarkierung(_zucker.Menge, 500);
+                //    }
+                //}
+                if (_zucker != null && _direktesZiel == _zucker && _zucker.Menge < 5)
                 {
                     _direktesZiel = null;
                     DreheUmWinkel(Zufall.Zahl(-30, 30));
@@ -178,6 +197,7 @@ namespace AntMe.Player.Ameisen
         /// <param name="zucker">Der gesichtete Zuckerhügel</param>
         public override void Sieht(Zucker zucker)
         {
+            TicketManager.Instance.RegistriereZucker(zucker);
             if (Ziel == null && _direktesZiel == null)
             {
                 GeheZuZiel(zucker);
@@ -204,7 +224,7 @@ namespace AntMe.Player.Ameisen
         /// <param name="zucker">Der erreichte Zuckerhügel</param>
         public override void ZielErreicht(Zucker zucker)
         {
-            SprüheMarkierung(zucker.Menge, 500); // Menge des restlichenZucker, 200 ist der Radius
+            //SprüheMarkierung(zucker.Menge, 500); // Menge des restlichenZucker, 200 ist der Radius
             if (_zucker == null)
             {
                 _zucker = zucker;
@@ -227,11 +247,11 @@ namespace AntMe.Player.Ameisen
         /// <param name="markierung">Die gerochene Markierung</param>
         public override void RiechtFreund(Markierung markierung)
         {
-            if (Ziel == null && _direktesZiel == null)
-            {
-                Denke("Gehe zum gefundenen Zucker");
-                GeheDirektZuZiel(markierung);
-            }
+            //if (Ziel == null && _direktesZiel == null)
+            //{
+            //    Denke("Gehe zum gefundenen Zucker");
+            //    GeheDirektZuZiel(markierung);
+            //}
         }
 
         /// <summary>
@@ -343,7 +363,7 @@ namespace AntMe.Player.Ameisen
 
         private void BerechneKoordinaten(Spielobjekt objekt)
         {
-           
+
             // Winkel öfnet sich nach links unten
             var entfernung = Koordinate.BestimmeEntfernung(objekt, _bau);
             var richtung = Koordinate.BestimmeRichtung(_bau, objekt);
